@@ -38,23 +38,29 @@ class MovieFinder extends React.Component {
         if (!searchTerm) {
           return;
         }
-        fetch(`https://www.omdbapi.com/?s=${searchTerm}&apikey=b7da8d63`).then((response) => {
+        const checkStatus = (response) => {
             if (response.ok) {
               // .ok returns true if response status is 200-299
-              return response.json();
+              return response;
             }
             throw new Error('Request was either a 404 or 500');
-          }).then((data) => {
-            if (data.Response === 'False') {
-              throw new Error(data.Error);
-            }
-            if (data.Response === 'True' && data.Search) {
-              this.setState({ results: data.Search, error: '' });
-            }
-          }).catch((error) => {
-            this.setState({ error: error.message });
-            console.log(error);
-          })
+          }
+          const json = (response) => response.json()
+          fetch(`https://www.omdbapi.com/?s=${searchTerm}&apikey=b7da8d63`)
+            .then(checkStatus)
+            .then(json)
+            .then(data => {
+              if (data.Response === 'False') {
+                throw new Error(data.Error);
+              }
+              if (data.Response === 'True' && data.Search) {
+                this.setState({ results: data.Search, error: '' });
+              }
+            })
+            .catch(error => {
+              this.setState({ error: error.message });
+              console.log(error);
+            })
     }
 
     render() {
@@ -87,7 +93,7 @@ class MovieFinder extends React.Component {
         )
       }
     }
-    
+
   ReactDOM.render(
     <MovieFinder />,
     document.getElementById('root')
