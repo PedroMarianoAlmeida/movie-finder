@@ -23,6 +23,7 @@ class MovieFinder extends React.Component {
       this.state = {
         searchTerm: '',
         results: [],
+        error: '',
       };
       this.handleChange = this.handleChange.bind(this);
       this.handleSubmit = this.handleSubmit.bind(this);
@@ -38,44 +39,55 @@ class MovieFinder extends React.Component {
           return;
         }
         fetch(`https://www.omdbapi.com/?s=${searchTerm}&apikey=b7da8d63`).then((response) => {
-          if (response.ok) {
-            // .ok returns true if response status is 200-299
-            return response.json();
-          }
-          throw new Error('Request was either a 404 or 500');
-        }).then((data) => {
-          // Store the array of movie objects in the component state
-          this.setState({ results: data.Search });
-        }).catch((error) => {
-          console.log(error);
-        })
+            if (response.ok) {
+              // .ok returns true if response status is 200-299
+              return response.json();
+            }
+            throw new Error('Request was either a 404 or 500');
+          }).then((data) => {
+            if (data.Response === 'False') {
+              throw new Error(data.Error);
+            }
+            if (data.Response === 'True' && data.Search) {
+              this.setState({ results: data.Search, error: '' });
+            }
+          }).catch((error) => {
+            this.setState({ error: error.message });
+            console.log(error);
+          })
     }
 
     render() {
-      const { searchTerm, results } = this.state;  // ES6 destructuring
-      return (
-        <div className="container">
-          <div className="row">
-            <div className="col-12">
-              <form onSubmit={this.handleSubmit} className="form-inline my-4">
-                <input
-                  type="text"
-                  className="form-control mr-sm-2"
-                  placeholder="frozen"
-                  value={searchTerm}
-                  onChange={this.handleChange}
-                />
-                <button type="submit" className="btn btn-primary">Submit</button>
-              </form>
-              {results.map((movie) => {
-                return <Movie key={movie.imdbID} movie={movie} />;
-                })}
+        const { searchTerm, results, error } = this.state;
+        return (
+          <div className="container">
+            <div className="row">
+              <div className="col-12">
+                <form onSubmit={this.handleSubmit} className="form-inline my-4">
+                  <input
+                    type="text"
+                    className="form-control mr-sm-2"
+                    placeholder="frozen"
+                    value={searchTerm}
+                    onChange={this.handleChange}
+                  />
+                  <button type="submit" className="btn btn-primary">Submit</button>
+                </form>
+                {(() => {
+                  if (error) {
+                    return error;
+                  }
+                  return results.map((movie) => {
+                    return <Movie key={movie.imdbID} movie={movie} />;
+                  })
+                })()}
+              </div>
             </div>
           </div>
-        </div>
-      )
+        )
+      }
     }
-  }
+    
   ReactDOM.render(
     <MovieFinder />,
     document.getElementById('root')
